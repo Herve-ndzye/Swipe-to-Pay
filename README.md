@@ -22,6 +22,7 @@ A complete RFID-based payment system with real-time card management, dual-mode t
 - **Backend Port**: 8255
 - **Frontend Port**: 9255
 - **MQTT Broker**: broker.benax.rw:1883
+- Whole project access Link : http://157.173.101.159:9255/
 
 ## 🚀 Quick Start
 
@@ -40,21 +41,12 @@ npm install
 npm start
 ```
 
-**Access locally:**
-- Frontend: http://localhost:9255
-- Backend: http://localhost:8255
-
 ### Configuration
 
 #### Backend (.env)
 ```env
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/swipetopay?retryWrites=true&w=majority&appName=Cluster0
 ```
-
-#### Frontend (config.js)
-Auto-detects environment:
-- **Local**: Uses `localhost:8255`
-- **Production**: Uses `http://157.173.101.159:8255`
 
 ## 📡 MQTT Topics
 
