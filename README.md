@@ -54,7 +54,7 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/swipetopay?retry
 #### Frontend (config.js)
 Auto-detects environment:
 - **Local**: Uses `localhost:8255`
-- **Production**: Uses `157.173.101.159:8255`
+- **Production**: Uses `http://157.173.101.159:8255`
 
 ## 📡 MQTT Topics
 

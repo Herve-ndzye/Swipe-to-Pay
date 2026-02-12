@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swipe To Pay - RFID Payment Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style-new.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="config.js"></script>
+</head>
+
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title-row">
+          <div class="logo-section">
+            <div class="logo-icon">💳</div>
+            <div>
+              <h1>Swipe To Pay</h1>
+              <p class="sidebar-subtitle">RFID Payment System</p>
+            </div>
+          </div>
+          <div class="connection-indicator" title="Connection Status">
+            <span class="indicator-dot" id="connection-indicator"></span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" title="Manage Payment Cards">
+          <span class="nav-icon">💳</span>
+          <span class="nav-text">Payment Cards</span>
+        </a>
+      </nav>
+
+      <div class="system-status">
+        <h3>🔧 System Health</h3>
+        <div class="status-item">
+          <div class="status-label">
+            <span class="status-dot" id="mqtt-status"></span>
+            MQTT Broker
+          </div>
+          <div class="status-value" id="mqtt-status-text">Connecting...</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">
+            <span class="status-dot" id="backend-status"></span>
+            Backend API
+          </div>
+          <div class="status-value" id="backend-status-text">Connecting...</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">
+            <span class="status-dot" id="db-status"></span>
+            Database
+          </div>
+          <div class="status-value" id="db-status-text">Unknown</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="team-info">
+          <span class="team-label">👥 Team</span>
+          <span class="team-value">Mavics</span>
+        </div>
+        <div class="uptime">
+          <span class="uptime-label">⏱️ Uptime</span>
+          <span class="uptime-value" id="uptime">00:00:00</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard Header -->
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Payment Dashboard</h2>
+          <p class="page-subtitle">Monitor your swipe-to-pay transactions in real-time</p>
+        </div>
+        <div class="header-actions">
+          <button class="action-btn secondary">
+            <span>📥</span> Export Data
+          </button>
+          <button class="action-btn primary">
+            <span>🔄</span> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card-main">
+          <div class="stat-icon">💳</div>
+          <div class="stat-content">
+            <div class="stat-label">Payment Cards</div>
+            <div class="stat-value" id="total-cards">0</div>
+            <div class="stat-trend positive">↗ Active</div>
+          </div>
+        </div>
+        <div class="stat-card-main">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <div class="stat-label">Payment Volume</div>
+            <div class="stat-value" id="total-volume">$0.00</div>
+            <div class="stat-trend positive">↗ Growing</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <!-- Card Status Section -->
+        <div class="glass-card card-status-section">
+          <div class="card-header">
+            <h3>💳 Swipe-to-Pay Reader</h3>
+            <span class="card-badge">Live</span>
+          </div>
+          <div class="card-visual-container">
+            <div id="card-visual" class="card-visual">
+              <div class="card-chip"></div>
+              <div class="card-number">**** **** **** ****</div>
+              <div class="card-details">
+                <div class="card-holder-group">
+                  <span class="card-label">CARD HOLDER</span>
+                  <span id="card-uid-display" class="card-value">NO CARD</span>
+                </div>
+                <div class="card-balance-group">
+                  <span class="card-label">BALANCE</span>
+                  <span id="card-balance-display" class="card-value">$0.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="status-display" class="status-content">
+            <div class="status-placeholder">
+              <div class="placeholder-icon">📡</div>
+              <p>Ready for swipe payment...</p>
+              <small>Swipe your RFID card on the reader to begin</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Section -->
+        <div class="glass-card topup-section">
+          <div class="card-header">
+            <h3 id="transaction-title">💵 Load Payment Card</h3>
+            <span class="card-badge secondary">Quick Action</span>
+          </div>
+
+          <!-- Mode Toggle Buttons -->
+          <div class="mode-toggle">
+            <button class="mode-btn active" id="add-mode-btn" data-mode="add">
+              <span>💰</span> Add Money
+            </button>
+            <button class="mode-btn" id="remove-mode-btn" data-mode="remove">
+              <span>💸</span> Remove Money
+            </button>
+          </div>
+
+          <div class="input-group">
+            <label for="uid">
+              <span class="label-icon">🔑</span> Card UID
+            </label>
+            <input type="text" id="uid" placeholder="Swipe card to auto-populate" readonly>
+          </div>
+          <div class="input-group">
+            <label for="holderName">
+              <span class="label-icon">👤</span> Card Holder Name
+            </label>
+            <input type="text" id="holderName" placeholder="Enter name for new cards">
+          </div>
+          <div class="input-group">
+            <label for="amount">
+              <span class="label-icon" id="amount-icon">💰</span> <span id="amount-label">Load Amount ($)</span>
+            </label>
+            <input type="number" id="amount" placeholder="0.00" step="0.01" min="0">
+            <div class="quick-amounts">
+              <button class="quick-amount-btn" data-amount="10">$10</button>
+              <button class="quick-amount-btn" data-amount="25">$25</button>
+              <button class="quick-amount-btn" data-amount="50">$50</button>
+              <button class="quick-amount-btn" data-amount="100">$100</button>
+            </div>
+          </div>
+          <button id="topup-btn" class="topup-button" disabled>
+            <span class="btn-icon" id="action-icon">✓</span> <span id="action-text">Load Card Balance</span>
+          </button>
+        </div>
+
+        <!-- Transaction History Section -->
+        <div class="glass-card transaction-section">
+          <div class="card-header">
+            <h3>📜 Payment History</h3>
+            <div class="header-controls">
+              <select class="filter-select">
+                <option value="all">All Payments</option>
+                <option value="topup">Card Loads</option>
+                <option value="debit">Payments</option>
+              </select>
+            </div>
+          </div>
+          <div id="transaction-history" class="transaction-list">
+            <div class="empty-state">
+              <div class="empty-icon">📊</div>
+              <p>No payment history yet</p>
+              <small>Payment transactions will appear here</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+
+</html>
